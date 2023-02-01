@@ -114,12 +114,19 @@ public final class URLEncodedFormEncoder {
     /// Encoding to use for `Date` values.
     public enum DateEncoding {
         /// ISO8601 and RFC3339 formatter.
+        @available(iOS 10, *)
         private static let iso8601Formatter: ISO8601DateFormatter = {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = .withInternetDateTime
             return formatter
         }()
 
+        private static let legacyISO8601Formatter: DateFormatter = {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+            return formatter
+        }()
         /// Defers encoding to the `Date` type. This is the default encoding.
         case deferredToDate
         /// Encodes `Date`s as seconds since midnight UTC on January 1, 1970.
@@ -148,7 +155,11 @@ public final class URLEncodedFormEncoder {
             case .millisecondsSince1970:
                 return String(date.timeIntervalSince1970 * 1000.0)
             case .iso8601:
-                return DateEncoding.iso8601Formatter.string(from: date)
+                if #available(iOS 10, *) {
+                    return DateEncoding.iso8601Formatter.string(from: date)
+                } else {
+                    return DateEncoding.legacyISO8601Formatter.string(from: date)
+                }
             case let .formatted(formatter):
                 return formatter.string(from: date)
             case let .custom(closure):

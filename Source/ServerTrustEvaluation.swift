@@ -513,7 +513,7 @@ extension AlamofireExtension where ExtendedType == SecTrust {
     ///   - policy:        The `SecPolicy` used to evaluate `self`.
     ///   - errorProducer: The closure used transform the failed `OSStatus` and `SecTrustResultType`.
     /// - Throws:          Any `Error` from applying the `policy`, or the result of `errorProducer` if validation fails.
-    @available(iOS, introduced: 10, deprecated: 12, renamed: "evaluate(afterApplying:)")
+    @available(iOS, introduced: 9, deprecated: 12, renamed: "evaluate(afterApplying:)")
     @available(macOS, introduced: 10.12, deprecated: 10.14, renamed: "evaluate(afterApplying:)")
     @available(tvOS, introduced: 10, deprecated: 12, renamed: "evaluate(afterApplying:)")
     @available(watchOS, introduced: 3, deprecated: 5, renamed: "evaluate(afterApplying:)")
@@ -558,7 +558,7 @@ extension AlamofireExtension where ExtendedType == SecTrust {
     /// - Parameter errorProducer: The closure used to transform the failed `OSStatus` and `SecTrustResultType` into an
     ///                            `Error`.
     /// - Throws:                  The `Error` produced by the `errorProducer` closure.
-    @available(iOS, introduced: 10, deprecated: 12, renamed: "evaluate()")
+    @available(iOS, introduced: 9, deprecated: 12, renamed: "evaluate()")
     @available(macOS, introduced: 10.12, deprecated: 10.14, renamed: "evaluate()")
     @available(tvOS, introduced: 10, deprecated: 12, renamed: "evaluate()")
     @available(watchOS, introduced: 3, deprecated: 5, renamed: "evaluate()")

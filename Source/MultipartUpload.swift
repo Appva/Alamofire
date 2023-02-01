@@ -50,7 +50,12 @@ final class MultipartUpload {
 
             uploadable = .data(data)
         } else {
-            let tempDirectoryURL = fileManager.temporaryDirectory
+            let tempDirectoryURL: URL
+            if #available(iOS 10, *) {
+                tempDirectoryURL = fileManager.temporaryDirectory
+            } else {
+                tempDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            }
             let directoryURL = tempDirectoryURL.appendingPathComponent("org.alamofire.manager/multipart.form.data")
             let fileName = UUID().uuidString
             let fileURL = directoryURL.appendingPathComponent(fileName)

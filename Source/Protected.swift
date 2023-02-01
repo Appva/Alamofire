@@ -49,7 +49,7 @@ extension Lock {
     }
 }
 
-#if os(Linux) || os(Windows)
+#if os(Linux) || os(Windows) || os(iOS)
 
 extension NSLock: Lock {}
 
@@ -57,6 +57,7 @@ extension NSLock: Lock {}
 
 #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
 /// An `os_unfair_lock` wrapper.
+@available(iOS 10, *)
 final class UnfairLock: Lock {
     private let unfairLock: os_unfair_lock_t
 
@@ -85,7 +86,27 @@ final class UnfairLock: Lock {
 @dynamicMemberLookup
 final class Protected<T> {
     #if os(macOS) || os(iOS) || os(watchOS) || os(tvOS)
-    private let lock = UnfairLock()
+    private var _lock: Any?
+    @available(iOS 10, *)
+    private var lock10: UnfairLock {
+        if _lock == nil {
+            _lock = UnfairLock()
+        }
+        return _lock as! UnfairLock
+    }
+    private var lock9: NSLock {
+        if _lock == nil {
+            _lock = NSLock()
+        }
+        return _lock as! NSLock
+    }
+    private var lock: Lock {
+        if #available(iOS 10, *) {
+            return lock10
+        } else {
+            return lock9
+        }
+    }
     #elseif os(Linux) || os(Windows)
     private let lock = NSLock()
     #endif

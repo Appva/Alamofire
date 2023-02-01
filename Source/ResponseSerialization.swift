@@ -193,13 +193,21 @@ extension DataRequest {
             // End work that should be on the serialization queue.
 
             self.underlyingQueue.async {
-                let response = DataResponse(request: self.request,
+                let response: AFDataResponse<Data?>
+                if #available(iOS 10, *) {
+                    response = DataResponse(request: self.request,
                                             response: self.response,
                                             data: self.data,
                                             metrics: self.metrics,
                                             serializationDuration: 0,
                                             result: result)
-
+                } else {
+                    response = DataResponse(request: self.request,
+                                            response: self.response,
+                                            data: self.data,
+                                            serializationDuration: 0,
+                                            result: result)
+                }
                 self.eventMonitor?.request(self, didParseResponse: response)
 
                 self.responseSerializerDidComplete { queue.async { completionHandler(response) } }
@@ -229,12 +237,21 @@ extension DataRequest {
             // End work that should be on the serialization queue.
 
             self.underlyingQueue.async {
-                let response = DataResponse(request: self.request,
+                let response: AFDataResponse<Serializer.SerializedObject>
+                if #available(iOS 10, *) {
+                    response = DataResponse(request: self.request,
                                             response: self.response,
                                             data: self.data,
                                             metrics: self.metrics,
                                             serializationDuration: end - start,
                                             result: result)
+                } else {
+                    response = DataResponse(request: self.request,
+                                            response: self.response,
+                                            data: self.data,
+                                            serializationDuration: end - start,
+                                            result: result)
+                }
 
                 self.eventMonitor?.request(self, didParseResponse: response)
 
@@ -258,13 +275,21 @@ extension DataRequest {
 
                     case let .doNotRetryWithError(retryError):
                         let result: AFResult<Serializer.SerializedObject> = .failure(retryError.asAFError(orFailWith: "Received retryError was not already AFError"))
-
-                        let response = DataResponse(request: self.request,
+                        let response: AFDataResponse<Serializer.SerializedObject>
+                        if #available(iOS 10, *) {
+                            response = DataResponse(request: self.request,
                                                     response: self.response,
                                                     data: self.data,
                                                     metrics: self.metrics,
                                                     serializationDuration: end - start,
                                                     result: result)
+                        } else {
+                            response = DataResponse(request: self.request,
+                                                    response: self.response,
+                                                    data: self.data,
+                                                    serializationDuration: end - start,
+                                                    result: result)
+                        }
 
                         didComplete = { completionHandler(response) }
 
@@ -329,13 +354,23 @@ extension DownloadRequest {
             // End work that should be on the serialization queue.
 
             self.underlyingQueue.async {
-                let response = DownloadResponse(request: self.request,
+                let response: AFDownloadResponse<URL?>
+                if #available(iOS 10, *) {
+                    response = DownloadResponse(request: self.request,
                                                 response: self.response,
                                                 fileURL: self.fileURL,
                                                 resumeData: self.resumeData,
                                                 metrics: self.metrics,
                                                 serializationDuration: 0,
                                                 result: result)
+                } else {
+                    response = DownloadResponse(request: self.request,
+                                                response: self.response,
+                                                fileURL: self.fileURL,
+                                                resumeData: self.resumeData,
+                                                serializationDuration: 0,
+                                                result: result)
+                }
 
                 self.eventMonitor?.request(self, didParseResponse: response)
 
@@ -365,13 +400,23 @@ extension DownloadRequest {
             // End work that should be on the serialization queue.
 
             self.underlyingQueue.async {
-                let response = DownloadResponse(request: self.request,
+                let response: AFDownloadResponse<Serializer.SerializedObject>
+                if #available(iOS 10, *) {
+                    response = DownloadResponse(request: self.request,
                                                 response: self.response,
                                                 fileURL: self.fileURL,
                                                 resumeData: self.resumeData,
                                                 metrics: self.metrics,
                                                 serializationDuration: end - start,
                                                 result: result)
+                } else {
+                    response = DownloadResponse(request: self.request,
+                                                response: self.response,
+                                                fileURL: self.fileURL,
+                                                resumeData: self.resumeData,
+                                                serializationDuration: end - start,
+                                                result: result)
+                }
 
                 self.eventMonitor?.request(self, didParseResponse: response)
 
@@ -395,14 +440,23 @@ extension DownloadRequest {
 
                     case let .doNotRetryWithError(retryError):
                         let result: AFResult<Serializer.SerializedObject> = .failure(retryError.asAFError(orFailWith: "Received retryError was not already AFError"))
-
-                        let response = DownloadResponse(request: self.request,
+                        let response: AFDownloadResponse<Serializer.SerializedObject>
+                        if #available(iOS 10, *) {
+                            response = DownloadResponse(request: self.request,
                                                         response: self.response,
                                                         fileURL: self.fileURL,
                                                         resumeData: self.resumeData,
                                                         metrics: self.metrics,
                                                         serializationDuration: end - start,
                                                         result: result)
+                        } else {
+                            response = DownloadResponse(request: self.request,
+                                                        response: self.response,
+                                                        fileURL: self.fileURL,
+                                                        resumeData: self.resumeData,
+                                                        serializationDuration: end - start,
+                                                        result: result)
+                        }
 
                         didComplete = { completionHandler(response) }
 

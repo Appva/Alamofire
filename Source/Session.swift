@@ -1010,20 +1010,14 @@ open class Session {
     }
 
     func performDataRequest(_ request: DataRequest) {
-        dispatchPrecondition(condition: .onQueue(requestQueue))
-
         performSetupOperations(for: request, convertible: request.convertible)
     }
 
     func performDataStreamRequest(_ request: DataStreamRequest) {
-        dispatchPrecondition(condition: .onQueue(requestQueue))
-
         performSetupOperations(for: request, convertible: request.convertible)
     }
 
     func performUploadRequest(_ request: UploadRequest) {
-        dispatchPrecondition(condition: .onQueue(requestQueue))
-
         performSetupOperations(for: request, convertible: request.convertible) {
             do {
                 let uploadable = try request.upload.createUploadable()
@@ -1037,8 +1031,6 @@ open class Session {
     }
 
     func performDownloadRequest(_ request: DownloadRequest) {
-        dispatchPrecondition(condition: .onQueue(requestQueue))
-
         switch request.downloadable {
         case let .request(convertible):
             performSetupOperations(for: request, convertible: convertible)
@@ -1050,8 +1042,6 @@ open class Session {
     func performSetupOperations(for request: Request,
                                 convertible: URLRequestConvertible,
                                 shouldCreateTask: @escaping () -> Bool = { true }) {
-        dispatchPrecondition(condition: .onQueue(requestQueue))
-
         let initialRequest: URLRequest
 
         do {
@@ -1093,8 +1083,6 @@ open class Session {
     // MARK: - Task Handling
 
     func didCreateURLRequest(_ urlRequest: URLRequest, for request: Request) {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         request.didCreateURLRequest(urlRequest)
 
         guard !request.isCancelled else { return }
@@ -1107,8 +1095,6 @@ open class Session {
     }
 
     func didReceiveResumeData(_ data: Data, for request: DownloadRequest) {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         guard !request.isCancelled else { return }
 
         let task = request.task(forResumeData: data, using: session)
@@ -1119,8 +1105,6 @@ open class Session {
     }
 
     func updateStatesForTask(_ task: URLSessionTask, request: Request) {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         request.withState { state in
             switch state {
             case .initialized, .finished:
@@ -1221,14 +1205,10 @@ extension Session: RequestDelegate {
 
 extension Session: SessionStateProvider {
     func request(for task: URLSessionTask) -> Request? {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         return requestTaskMap[task]
     }
 
     func didGatherMetricsForTask(_ task: URLSessionTask) {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         let didDisassociate = requestTaskMap.disassociateIfNecessaryAfterGatheringMetricsForTask(task)
 
         if didDisassociate {
@@ -1238,8 +1218,6 @@ extension Session: SessionStateProvider {
     }
 
     func didCompleteTask(_ task: URLSessionTask, completion: @escaping () -> Void) {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         let didDisassociate = requestTaskMap.disassociateIfNecessaryAfterCompletingTask(task)
 
         if didDisassociate {
@@ -1250,15 +1228,11 @@ extension Session: SessionStateProvider {
     }
 
     func credential(for task: URLSessionTask, in protectionSpace: URLProtectionSpace) -> URLCredential? {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         return requestTaskMap[task]?.credential ??
             session.configuration.urlCredentialStorage?.defaultCredential(for: protectionSpace)
     }
 
     func cancelRequestsForSessionInvalidation(with error: Error?) {
-        dispatchPrecondition(condition: .onQueue(rootQueue))
-
         requestTaskMap.requests.forEach { $0.finish(error: AFError.sessionInvalidated(error: error)) }
     }
 }

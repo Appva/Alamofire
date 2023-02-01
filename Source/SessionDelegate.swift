@@ -203,6 +203,7 @@ extension SessionDelegate: URLSessionTaskDelegate {
         }
     }
 
+    @available(iOS 10, *)
     open func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         eventMonitor?.urlSession(session, task: task, didFinishCollecting: metrics)
 

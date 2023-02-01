@@ -112,7 +112,17 @@ public class Request {
         var tasks: [URLSessionTask] = []
         /// All `URLSessionTaskMetrics` values gathered by Alamofire on behalf of the `Request`. Should correspond
         /// exactly the the `tasks` created.
-        var metrics: [URLSessionTaskMetrics] = []
+        /// private var _selectionFeedbackGenerator: Any? = nil
+        private var _metrics: Any? = nil
+        @available(iOS 10.0, *)
+        fileprivate var metrics: [URLSessionTaskMetrics] {
+            get {
+                _metrics as! [URLSessionTaskMetrics]
+            }
+            set {
+                _metrics = newValue
+            }
+        }
         /// Number of times any retriers provided retried the `Request`.
         var retryCount = 0
         /// Final `AFError` for the `Request`, whether from various internal Alamofire calls or as a result of a `task`.
@@ -122,6 +132,85 @@ public class Request {
         var isFinishing = false
         /// Actions to run when requests are finished. Use for concurrency support.
         var finishHandlers: [() -> Void] = []
+
+        @available(iOS 10, *)
+        init(state: State = .initialized,
+             uploadProgressHander: (handler: ProgressHandler, queue: DispatchQueue)? = nil,
+             downloadProgressHandler: (handler: ProgressHandler, queue: DispatchQueue)? = nil,
+             redirectHandler: RedirectHandler? = nil,
+             cachedResponseHandler: CachedResponseHandler? = nil,
+             cURLHandler: (queue: DispatchQueue, handler: (String) -> Void)? = nil,
+             urlRequestHandler: (queue: DispatchQueue, handler: (URLRequest) -> Void)? = nil,
+             urlSessionTaskHandler: (queue: DispatchQueue, handler: (URLSessionTask) -> Void)? = nil,
+             responseSerializers: [() -> Void] = [],
+             responseSerializerCompletions: [() -> Void] = [],
+             responseSerializerProcessingFinished: Bool = false,
+             credential: URLCredential? = nil,
+             requests: [URLRequest] = [],
+             tasks: [URLSessionTask] = [],
+             metrics: [URLSessionTaskMetrics] = [],
+             retryCount: Int = 0,
+             error: AFError? = nil,
+             isFinishing: Bool = false,
+             finishHandlers: [() -> Void] = []) {
+            self.state = state
+            self.uploadProgressHandler = uploadProgressHander
+            self.downloadProgressHandler = downloadProgressHandler
+            self.redirectHandler = redirectHandler
+            self.cachedResponseHandler = cachedResponseHandler
+            self.cURLHandler = cURLHandler
+            self.urlRequestHandler = urlRequestHandler
+            self.urlSessionTaskHandler = urlSessionTaskHandler
+            self.responseSerializers = responseSerializers
+            self.responseSerializerCompletions = responseSerializerCompletions
+            self.responseSerializerProcessingFinished = responseSerializerProcessingFinished
+            self.credential = credential
+            self.requests = requests
+            self.tasks = tasks
+            self._metrics = metrics
+            self.retryCount = retryCount
+            self.error = error
+            self.isFinishing = isFinishing
+            self.finishHandlers = finishHandlers
+        }
+
+        init(state: State = .initialized,
+             uploadProgressHander: (handler: ProgressHandler, queue: DispatchQueue)? = nil,
+             downloadProgressHandler: (handler: ProgressHandler, queue: DispatchQueue)? = nil,
+             redirectHandler: RedirectHandler? = nil,
+             cachedResponseHandler: CachedResponseHandler? = nil,
+             cURLHandler: (queue: DispatchQueue, handler: (String) -> Void)? = nil,
+             urlRequestHandler: (queue: DispatchQueue, handler: (URLRequest) -> Void)? = nil,
+             urlSessionTaskHandler: (queue: DispatchQueue, handler: (URLSessionTask) -> Void)? = nil,
+             responseSerializers: [() -> Void] = [],
+             responseSerializerCompletions: [() -> Void] = [],
+             responseSerializerProcessingFinished: Bool = false,
+             credential: URLCredential? = nil,
+             requests: [URLRequest] = [],
+             tasks: [URLSessionTask] = [],
+             retryCount: Int = 0,
+             error: AFError? = nil,
+             isFinishing: Bool = false,
+             finishHandlers: [() -> Void] = []) {
+            self.state = state
+            self.uploadProgressHandler = uploadProgressHander
+            self.downloadProgressHandler = downloadProgressHandler
+            self.redirectHandler = redirectHandler
+            self.cachedResponseHandler = cachedResponseHandler
+            self.cURLHandler = cURLHandler
+            self.urlRequestHandler = urlRequestHandler
+            self.urlSessionTaskHandler = urlSessionTaskHandler
+            self.responseSerializers = responseSerializers
+            self.responseSerializerCompletions = responseSerializerCompletions
+            self.responseSerializerProcessingFinished = responseSerializerProcessingFinished
+            self.credential = credential
+            self.requests = requests
+            self.tasks = tasks
+            self.retryCount = retryCount
+            self.error = error
+            self.isFinishing = isFinishing
+            self.finishHandlers = finishHandlers
+        }
     }
 
     /// Protected `MutableState` value that provides thread-safe access to state values.
@@ -227,12 +316,16 @@ public class Request {
     // MARK: Metrics
 
     /// All `URLSessionTaskMetrics` gathered on behalf of the `Request`. Should correspond to the `tasks` created.
+    @available(iOS 10, *)
     public var allMetrics: [URLSessionTaskMetrics] { $mutableState.metrics }
     /// First `URLSessionTaskMetrics` gathered on behalf of the `Request`.
+    @available(iOS 10, *)
     public var firstMetrics: URLSessionTaskMetrics? { allMetrics.first }
     /// Last `URLSessionTaskMetrics` gathered on behalf of the `Request`.
+    @available(iOS 10, *)
     public var lastMetrics: URLSessionTaskMetrics? { allMetrics.last }
     /// Current `URLSessionTaskMetrics` gathered on behalf of the `Request`.
+    @available(iOS 10, *)
     public var metrics: URLSessionTaskMetrics? { lastMetrics }
 
     // MARK: Retry Count
@@ -281,8 +374,6 @@ public class Request {
     ///
     /// - Parameter request: The `URLRequest` created.
     func didCreateInitialURLRequest(_ request: URLRequest) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         $mutableState.write { $0.requests.append(request) }
 
         eventMonitor?.request(self, didCreateInitialURLRequest: request)
@@ -294,8 +385,6 @@ public class Request {
     ///
     /// - Parameter error: `AFError` thrown from the failed creation.
     func didFailToCreateURLRequest(with error: AFError) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         self.error = error
 
         eventMonitor?.request(self, didFailToCreateURLRequestWithError: error)
@@ -311,8 +400,6 @@ public class Request {
     ///   - initialRequest: The `URLRequest` that was adapted.
     ///   - adaptedRequest: The `URLRequest` returned by the `RequestAdapter`.
     func didAdaptInitialRequest(_ initialRequest: URLRequest, to adaptedRequest: URLRequest) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         $mutableState.write { $0.requests.append(adaptedRequest) }
 
         eventMonitor?.request(self, didAdaptInitialRequest: initialRequest, to: adaptedRequest)
@@ -326,8 +413,6 @@ public class Request {
     ///   - request: The `URLRequest` the adapter was called with.
     ///   - error:   The `AFError` returned by the `RequestAdapter`.
     func didFailToAdaptURLRequest(_ request: URLRequest, withError error: AFError) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         self.error = error
 
         eventMonitor?.request(self, didFailToAdaptURLRequest: request, withError: error)
@@ -341,8 +426,6 @@ public class Request {
     ///
     /// - Parameter request: The `URLRequest` created.
     func didCreateURLRequest(_ request: URLRequest) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         $mutableState.read { state in
             state.urlRequestHandler?.queue.async { state.urlRequestHandler?.handler(request) }
         }
@@ -367,8 +450,6 @@ public class Request {
     ///
     /// - Parameter task: The `URLSessionTask` created.
     func didCreateTask(_ task: URLSessionTask) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         $mutableState.write { state in
             state.tasks.append(task)
 
@@ -382,8 +463,6 @@ public class Request {
 
     /// Called when resumption is completed.
     func didResume() {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         eventMonitor?.requestDidResume(self)
     }
 
@@ -391,15 +470,11 @@ public class Request {
     ///
     /// - Parameter task: The `URLSessionTask` resumed.
     func didResumeTask(_ task: URLSessionTask) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         eventMonitor?.request(self, didResumeTask: task)
     }
 
     /// Called when suspension is completed.
     func didSuspend() {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         eventMonitor?.requestDidSuspend(self)
     }
 
@@ -407,15 +482,11 @@ public class Request {
     ///
     /// - Parameter task: The `URLSessionTask` suspended.
     func didSuspendTask(_ task: URLSessionTask) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         eventMonitor?.request(self, didSuspendTask: task)
     }
 
     /// Called when cancellation is completed, sets `error` to `AFError.explicitlyCancelled`.
     func didCancel() {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         error = error ?? AFError.explicitlyCancelled
 
         eventMonitor?.requestDidCancel(self)
@@ -425,14 +496,13 @@ public class Request {
     ///
     /// - Parameter task: The `URLSessionTask` cancelled.
     func didCancelTask(_ task: URLSessionTask) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         eventMonitor?.request(self, didCancelTask: task)
     }
 
     /// Called when a `URLSessionTaskMetrics` value is gathered on behalf of the instance.
     ///
     /// - Parameter metrics: The `URLSessionTaskMetrics` gathered.
+    @available(iOS 10, *)
     func didGatherMetrics(_ metrics: URLSessionTaskMetrics) {
         dispatchPrecondition(condition: .onQueue(underlyingQueue))
 
@@ -447,8 +517,6 @@ public class Request {
     ///   - task:  The `URLSessionTask` which failed.
     ///   - error: The early failure `AFError`.
     func didFailTask(_ task: URLSessionTask, earlyWithError error: AFError) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         self.error = error
 
         // Task will still complete, so didCompleteTask(_:with:) will handle retry.
@@ -464,8 +532,6 @@ public class Request {
     ///   - error: The `AFError` `task` may have completed with. If `error` has already been set on the instance, this
     ///            value is ignored.
     func didCompleteTask(_ task: URLSessionTask, with error: AFError?) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         self.error = self.error ?? error
 
         validators.forEach { $0() }
@@ -477,8 +543,6 @@ public class Request {
 
     /// Called when the `RequestDelegate` is going to retry this `Request`. Calls `reset()`.
     func prepareForRetry() {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         $mutableState.write { $0.retryCount += 1 }
 
         reset()
@@ -491,8 +555,6 @@ public class Request {
     ///
     /// - Parameter error: The possible `AFError` which may trigger retry.
     func retryOrFinish(error: AFError?) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         guard !isCancelled, let error = error, let delegate = delegate else { finish(); return }
 
         delegate.retryResult(for: self, dueTo: error) { retryResult in
@@ -511,8 +573,6 @@ public class Request {
     ///
     /// - Parameter error: The possible `Error` with which the instance will finish.
     func finish(error: AFError? = nil) {
-        dispatchPrecondition(condition: .onQueue(underlyingQueue))
-
         guard !$mutableState.isFinishing else { return }
 
         $mutableState.isFinishing = true
@@ -1224,9 +1284,32 @@ public final class DataStreamRequest: Request {
         /// Last `HTTPURLResponse` received by the instance.
         public let response: HTTPURLResponse?
         /// Last `URLSessionTaskMetrics` produced for the instance.
-        public let metrics: URLSessionTaskMetrics?
+        private var _metrics: Any?
+        @available(iOS 10, *)
+        public var metrics: URLSessionTaskMetrics? {
+            _metrics as? URLSessionTaskMetrics
+        }
         /// `AFError` produced for the instance, if any.
         public let error: AFError?
+
+        @available(iOS 10, *)
+        public init(request: URLRequest? = nil,
+                    response: HTTPURLResponse? = nil,
+                    metrics: URLSessionTaskMetrics? = nil,
+                    error: AFError? = nil) {
+            self.request = request
+            self.response = response
+            self._metrics = metrics
+            self.error = error
+        }
+
+        public init(request: URLRequest? = nil,
+                    response: HTTPURLResponse? = nil,
+                    error: AFError? = nil) {
+            self.request = request
+            self.response = response
+            self.error = error
+        }
     }
 
     /// Type used to cancel an ongoing stream.
@@ -1415,10 +1498,17 @@ public final class DataStreamRequest: Request {
                                              stream: @escaping Handler<Success, Failure>) {
         queue.async {
             do {
-                let completion = Completion(request: self.request,
+                let completion: Completion
+                if #available(iOS 10, *) {
+                    completion = Completion(request: self.request,
                                             response: self.response,
                                             metrics: self.metrics,
                                             error: self.error)
+                } else {
+                    completion = Completion(request: self.request,
+                                            response: self.response,
+                                            error: self.error)
+                }
                 try stream(.init(event: .complete(completion), token: .init(self)))
             } catch {
                 // Ignore error, as errors on Completion can't be handled anyway.

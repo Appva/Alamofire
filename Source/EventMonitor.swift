@@ -59,6 +59,7 @@ public protocol EventMonitor {
                     newRequest request: URLRequest)
 
     /// Event called during `URLSessionTaskDelegate`'s `urlSession(_:task:didFinishCollecting:)` method.
+    @available(iOS 10, *)
     func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics)
 
     /// Event called during `URLSessionTaskDelegate`'s `urlSession(_:task:didCompleteWithError:)` method.
@@ -116,6 +117,7 @@ public protocol EventMonitor {
     func request(_ request: Request, didCreateTask task: URLSessionTask)
 
     /// Event called when a `Request` receives a `URLSessionTaskMetrics` value.
+    @available(iOS 10, *)
     func request(_ request: Request, didGatherMetrics metrics: URLSessionTaskMetrics)
 
     /// Event called when a `Request` fails due to an error created by Alamofire. e.g. When certificate pinning fails.
@@ -240,6 +242,7 @@ extension EventMonitor {
                            task: URLSessionTask,
                            willPerformHTTPRedirection response: HTTPURLResponse,
                            newRequest request: URLRequest) {}
+    @available(iOS 10, *)
     public func urlSession(_ session: URLSession,
                            task: URLSessionTask,
                            didFinishCollecting metrics: URLSessionTaskMetrics) {}
@@ -271,6 +274,7 @@ extension EventMonitor {
                         withError error: AFError) {}
     public func request(_ request: Request, didCreateURLRequest urlRequest: URLRequest) {}
     public func request(_ request: Request, didCreateTask task: URLSessionTask) {}
+    @available(iOS 10, *)
     public func request(_ request: Request, didGatherMetrics metrics: URLSessionTaskMetrics) {}
     public func request(_ request: Request, didFailTask task: URLSessionTask, earlyWithError error: AFError) {}
     public func request(_ request: Request, didCompleteTask task: URLSessionTask, with error: AFError?) {}
@@ -368,6 +372,7 @@ public final class CompositeEventMonitor: EventMonitor {
         }
     }
 
+    @available(iOS 10, *)
     public func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         performEvent { $0.urlSession(session, task: task, didFinishCollecting: metrics) }
     }
@@ -447,6 +452,7 @@ public final class CompositeEventMonitor: EventMonitor {
         performEvent { $0.request(request, didCreateTask: task) }
     }
 
+    @available(iOS 10, *)
     public func request(_ request: Request, didGatherMetrics metrics: URLSessionTaskMetrics) {
         performEvent { $0.request(request, didGatherMetrics: metrics) }
     }
@@ -586,7 +592,16 @@ open class ClosureEventMonitor: EventMonitor {
     open var taskWillPerformHTTPRedirection: ((URLSession, URLSessionTask, HTTPURLResponse, URLRequest) -> Void)?
 
     /// Closure called on the `urlSession(_:task:didFinishCollecting:)` event.
-    open var taskDidFinishCollectingMetrics: ((URLSession, URLSessionTask, URLSessionTaskMetrics) -> Void)?
+    private var _taskDidFinishCollectingMetrics: Any?
+    @available(iOS 10, *)
+    open var taskDidFinishCollectingMetrics: ((URLSession, URLSessionTask, URLSessionTaskMetrics) -> Void)? {
+        get {
+            _taskDidFinishCollectingMetrics as? ((URLSession, URLSessionTask, URLSessionTaskMetrics) -> Void)
+        }
+        set {
+            _taskDidFinishCollectingMetrics = newValue
+        }
+    }
 
     /// Closure called on the `urlSession(_:task:didCompleteWithError:)` event.
     open var taskDidComplete: ((URLSession, URLSessionTask, Error?) -> Void)?
@@ -631,7 +646,16 @@ open class ClosureEventMonitor: EventMonitor {
     open var requestDidCreateTask: ((Request, URLSessionTask) -> Void)?
 
     /// Closure called on the `request(_:didGatherMetrics:)` event.
-    open var requestDidGatherMetrics: ((Request, URLSessionTaskMetrics) -> Void)?
+    private var _requestDidGatherMetrics: Any?
+    @available(iOS 10, *)
+    open var requestDidGatherMetrics: ((Request, URLSessionTaskMetrics) -> Void)? {
+        get {
+            _requestDidGatherMetrics as? ((Request, URLSessionTaskMetrics) -> Void)
+        }
+        set {
+            _requestDidGatherMetrics = newValue
+        }
+    }
 
     /// Closure called on the `request(_:didFailTask:earlyWithError:)` event.
     open var requestDidFailTaskEarlyWithError: ((Request, URLSessionTask, AFError) -> Void)?
@@ -729,6 +753,7 @@ open class ClosureEventMonitor: EventMonitor {
         taskWillPerformHTTPRedirection?(session, task, response, request)
     }
 
+    @available(iOS 10, *)
     open func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         taskDidFinishCollectingMetrics?(session, task, metrics)
     }
@@ -794,6 +819,7 @@ open class ClosureEventMonitor: EventMonitor {
         requestDidCreateTask?(request, task)
     }
 
+    @available(iOS 10, *)
     open func request(_ request: Request, didGatherMetrics metrics: URLSessionTaskMetrics) {
         requestDidGatherMetrics?(request, metrics)
     }

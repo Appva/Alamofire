@@ -44,7 +44,11 @@ public struct DataResponse<Success, Failure: Error> {
     ///
     /// - Note: Due to `FB7624529`, collection of `URLSessionTaskMetrics` on watchOS is currently disabled.`
     ///
-    public let metrics: URLSessionTaskMetrics?
+    private var _metrics: Any?
+    @available(iOS 10, *)
+    public var metrics: URLSessionTaskMetrics? {
+        _metrics as? URLSessionTaskMetrics
+    }
 
     /// The time taken to serialize the response.
     public let serializationDuration: TimeInterval
@@ -67,6 +71,7 @@ public struct DataResponse<Success, Failure: Error> {
     ///   - metrics:               The `URLSessionTaskMetrics` of the `DataRequest` or `UploadRequest`.
     ///   - serializationDuration: The duration taken by serialization.
     ///   - result:                The `Result` of response serialization.
+    @available(iOS 10, *)
     public init(request: URLRequest?,
                 response: HTTPURLResponse?,
                 data: Data?,
@@ -76,7 +81,19 @@ public struct DataResponse<Success, Failure: Error> {
         self.request = request
         self.response = response
         self.data = data
-        self.metrics = metrics
+        self._metrics = metrics
+        self.serializationDuration = serializationDuration
+        self.result = result
+    }
+
+    public init(request: URLRequest?,
+                response: HTTPURLResponse?,
+                data: Data?,
+                serializationDuration: TimeInterval,
+                result: Result<Success, Failure>) {
+        self.request = request
+        self.response = response
+        self.data = data
         self.serializationDuration = serializationDuration
         self.result = result
     }
@@ -109,7 +126,12 @@ extension DataResponse: CustomStringConvertible, CustomDebugStringConvertible {
             """
         } ?? "[Response]: None"
 
-        let networkDuration = metrics.map { "\($0.taskInterval.duration)s" } ?? "None"
+        let networkDuration: String
+        if #available(iOS 10, *) {
+            networkDuration = metrics.map { "\($0.taskInterval.duration)s" } ?? "None"
+        } else {
+            networkDuration = "Unsupported"
+        }
 
         return """
         \(requestDescription)
@@ -137,12 +159,20 @@ extension DataResponse {
     /// - returns: A `DataResponse` whose result wraps the value returned by the given closure. If this instance's
     ///            result is a failure, returns a response wrapping the same failure.
     public func map<NewSuccess>(_ transform: (Success) -> NewSuccess) -> DataResponse<NewSuccess, Failure> {
-        DataResponse<NewSuccess, Failure>(request: request,
-                                          response: response,
-                                          data: data,
-                                          metrics: metrics,
-                                          serializationDuration: serializationDuration,
-                                          result: result.map(transform))
+        if #available(iOS 10, *) {
+            return DataResponse<NewSuccess, Failure>(request: request,
+                                                     response: response,
+                                                     data: data,
+                                                     metrics: metrics,
+                                                     serializationDuration: serializationDuration,
+                                                     result: result.map(transform))
+        } else {
+            return DataResponse<NewSuccess, Failure>(request: request,
+                                                     response: response,
+                                                     data: data,
+                                                     serializationDuration: serializationDuration,
+                                                     result: result.map(transform))
+        }
     }
 
     /// Evaluates the given closure when the result of this `DataResponse` is a success, passing the unwrapped result
@@ -160,12 +190,20 @@ extension DataResponse {
     /// - returns: A success or failure `DataResponse` depending on the result of the given closure. If this instance's
     ///            result is a failure, returns the same failure.
     public func tryMap<NewSuccess>(_ transform: (Success) throws -> NewSuccess) -> DataResponse<NewSuccess, Error> {
-        DataResponse<NewSuccess, Error>(request: request,
-                                        response: response,
-                                        data: data,
-                                        metrics: metrics,
-                                        serializationDuration: serializationDuration,
-                                        result: result.tryMap(transform))
+        if #available(iOS 10, *) {
+            return DataResponse<NewSuccess, Error>(request: request,
+                                                   response: response,
+                                                   data: data,
+                                                   metrics: metrics,
+                                                   serializationDuration: serializationDuration,
+                                                   result: result.tryMap(transform))
+        } else {
+            return DataResponse<NewSuccess, Error>(request: request,
+                                                   response: response,
+                                                   data: data,
+                                                   serializationDuration: serializationDuration,
+                                                   result: result.tryMap(transform))
+        }
     }
 
     /// Evaluates the specified closure when the `DataResponse` is a failure, passing the unwrapped error as a parameter.
@@ -179,12 +217,20 @@ extension DataResponse {
     ///
     /// - Returns: A `DataResponse` instance containing the result of the transform.
     public func mapError<NewFailure: Error>(_ transform: (Failure) -> NewFailure) -> DataResponse<Success, NewFailure> {
-        DataResponse<Success, NewFailure>(request: request,
-                                          response: response,
-                                          data: data,
-                                          metrics: metrics,
-                                          serializationDuration: serializationDuration,
-                                          result: result.mapError(transform))
+        if #available(iOS 10, *) {
+            return DataResponse<Success, NewFailure>(request: request,
+                                                     response: response,
+                                                     data: data,
+                                                     metrics: metrics,
+                                                     serializationDuration: serializationDuration,
+                                                     result: result.mapError(transform))
+        } else {
+            return DataResponse<Success, NewFailure>(request: request,
+                                                     response: response,
+                                                     data: data,
+                                                     serializationDuration: serializationDuration,
+                                                     result: result.mapError(transform))
+        }
     }
 
     /// Evaluates the specified closure when the `DataResponse` is a failure, passing the unwrapped error as a parameter.
@@ -200,12 +246,20 @@ extension DataResponse {
     ///
     /// - Returns: A `DataResponse` instance containing the result of the transform.
     public func tryMapError<NewFailure: Error>(_ transform: (Failure) throws -> NewFailure) -> DataResponse<Success, Error> {
-        DataResponse<Success, Error>(request: request,
-                                     response: response,
-                                     data: data,
-                                     metrics: metrics,
-                                     serializationDuration: serializationDuration,
-                                     result: result.tryMapError(transform))
+        if #available(iOS 10, *) {
+            return DataResponse<Success, Error>(request: request,
+                                                response: response,
+                                                data: data,
+                                                metrics: metrics,
+                                                serializationDuration: serializationDuration,
+                                                result: result.tryMapError(transform))
+        } else {
+            return DataResponse<Success, Error>(request: request,
+                                                response: response,
+                                                data: data,
+                                                serializationDuration: serializationDuration,
+                                                result: result.tryMapError(transform))
+        }
     }
 }
 
@@ -229,7 +283,11 @@ public struct DownloadResponse<Success, Failure: Error> {
     ///
     /// - Note: Due to `FB7624529`, collection of `URLSessionTaskMetrics` on watchOS is currently disabled.`
     ///
-    public let metrics: URLSessionTaskMetrics?
+    private var _metrics: Any?
+    @available(iOS 10, *)
+    public var metrics: URLSessionTaskMetrics? {
+        _metrics as? URLSessionTaskMetrics
+    }
 
     /// The time taken to serialize the response.
     public let serializationDuration: TimeInterval
@@ -253,6 +311,7 @@ public struct DownloadResponse<Success, Failure: Error> {
     ///   - metrics:               The `URLSessionTaskMetrics` of the `DownloadRequest`.
     ///   - serializationDuration: The duration taken by serialization.
     ///   - result:                The `Result` of response serialization.
+    @available(iOS 10, *)
     public init(request: URLRequest?,
                 response: HTTPURLResponse?,
                 fileURL: URL?,
@@ -264,7 +323,21 @@ public struct DownloadResponse<Success, Failure: Error> {
         self.response = response
         self.fileURL = fileURL
         self.resumeData = resumeData
-        self.metrics = metrics
+        self._metrics = metrics
+        self.serializationDuration = serializationDuration
+        self.result = result
+    }
+
+    public init(request: URLRequest?,
+                response: HTTPURLResponse?,
+                fileURL: URL?,
+                resumeData: Data?,
+                serializationDuration: TimeInterval,
+                result: Result<Success, Failure>) {
+        self.request = request
+        self.response = response
+        self.fileURL = fileURL
+        self.resumeData = resumeData
         self.serializationDuration = serializationDuration
         self.result = result
     }
@@ -287,7 +360,12 @@ extension DownloadResponse: CustomStringConvertible, CustomDebugStringConvertibl
 
         let requestDescription = DebugDescription.description(of: urlRequest)
         let responseDescription = response.map(DebugDescription.description(of:)) ?? "[Response]: None"
-        let networkDuration = metrics.map { "\($0.taskInterval.duration)s" } ?? "None"
+        let networkDuration: String
+        if #available(iOS 10, *) {
+            networkDuration = metrics.map { "\($0.taskInterval.duration)s" } ?? "None"
+        } else {
+            networkDuration = "Unsupported"
+        }
         let resumeDataDescription = resumeData.map { "\($0)" } ?? "None"
 
         return """
@@ -318,13 +396,22 @@ extension DownloadResponse {
     /// - returns: A `DownloadResponse` whose result wraps the value returned by the given closure. If this instance's
     ///            result is a failure, returns a response wrapping the same failure.
     public func map<NewSuccess>(_ transform: (Success) -> NewSuccess) -> DownloadResponse<NewSuccess, Failure> {
-        DownloadResponse<NewSuccess, Failure>(request: request,
-                                              response: response,
-                                              fileURL: fileURL,
-                                              resumeData: resumeData,
-                                              metrics: metrics,
-                                              serializationDuration: serializationDuration,
-                                              result: result.map(transform))
+        if #available(iOS 10, *) {
+            return DownloadResponse<NewSuccess, Failure>(request: request,
+                                                         response: response,
+                                                         fileURL: fileURL,
+                                                         resumeData: resumeData,
+                                                         metrics: metrics,
+                                                         serializationDuration: serializationDuration,
+                                                         result: result.map(transform))
+        } else {
+            return DownloadResponse<NewSuccess, Failure>(request: request,
+                                                         response: response,
+                                                         fileURL: fileURL,
+                                                         resumeData: resumeData,
+                                                         serializationDuration: serializationDuration,
+                                                         result: result.map(transform))
+        }
     }
 
     /// Evaluates the given closure when the result of this `DownloadResponse` is a success, passing the unwrapped
@@ -342,13 +429,22 @@ extension DownloadResponse {
     /// - returns: A success or failure `DownloadResponse` depending on the result of the given closure. If this
     /// instance's result is a failure, returns the same failure.
     public func tryMap<NewSuccess>(_ transform: (Success) throws -> NewSuccess) -> DownloadResponse<NewSuccess, Error> {
-        DownloadResponse<NewSuccess, Error>(request: request,
-                                            response: response,
-                                            fileURL: fileURL,
-                                            resumeData: resumeData,
-                                            metrics: metrics,
-                                            serializationDuration: serializationDuration,
-                                            result: result.tryMap(transform))
+        if #available(iOS 10, *) {
+            return DownloadResponse<NewSuccess, Error>(request: request,
+                                                       response: response,
+                                                       fileURL: fileURL,
+                                                       resumeData: resumeData,
+                                                       metrics: metrics,
+                                                       serializationDuration: serializationDuration,
+                                                       result: result.tryMap(transform))
+        } else {
+            return DownloadResponse<NewSuccess, Error>(request: request,
+                                                       response: response,
+                                                       fileURL: fileURL,
+                                                       resumeData: resumeData,
+                                                       serializationDuration: serializationDuration,
+                                                       result: result.tryMap(transform))
+        }
     }
 
     /// Evaluates the specified closure when the `DownloadResponse` is a failure, passing the unwrapped error as a parameter.
@@ -362,13 +458,22 @@ extension DownloadResponse {
     ///
     /// - Returns: A `DownloadResponse` instance containing the result of the transform.
     public func mapError<NewFailure: Error>(_ transform: (Failure) -> NewFailure) -> DownloadResponse<Success, NewFailure> {
-        DownloadResponse<Success, NewFailure>(request: request,
-                                              response: response,
-                                              fileURL: fileURL,
-                                              resumeData: resumeData,
-                                              metrics: metrics,
-                                              serializationDuration: serializationDuration,
-                                              result: result.mapError(transform))
+        if #available(iOS 10, *) {
+            return DownloadResponse<Success, NewFailure>(request: request,
+                                                         response: response,
+                                                         fileURL: fileURL,
+                                                         resumeData: resumeData,
+                                                         metrics: metrics,
+                                                         serializationDuration: serializationDuration,
+                                                         result: result.mapError(transform))
+        } else {
+            return DownloadResponse<Success, NewFailure>(request: request,
+                                                         response: response,
+                                                         fileURL: fileURL,
+                                                         resumeData: resumeData,
+                                                         serializationDuration: serializationDuration,
+                                                         result: result.mapError(transform))
+        }
     }
 
     /// Evaluates the specified closure when the `DownloadResponse` is a failure, passing the unwrapped error as a parameter.
@@ -384,13 +489,22 @@ extension DownloadResponse {
     ///
     /// - Returns: A `DownloadResponse` instance containing the result of the transform.
     public func tryMapError<NewFailure: Error>(_ transform: (Failure) throws -> NewFailure) -> DownloadResponse<Success, Error> {
-        DownloadResponse<Success, Error>(request: request,
-                                         response: response,
-                                         fileURL: fileURL,
-                                         resumeData: resumeData,
-                                         metrics: metrics,
-                                         serializationDuration: serializationDuration,
-                                         result: result.tryMapError(transform))
+        if #available(iOS 10, *) {
+            return DownloadResponse<Success, Error>(request: request,
+                                                    response: response,
+                                                    fileURL: fileURL,
+                                                    resumeData: resumeData,
+                                                    metrics: metrics,
+                                                    serializationDuration: serializationDuration,
+                                                    result: result.tryMapError(transform))
+        } else {
+            return DownloadResponse<Success, Error>(request: request,
+                                                    response: response,
+                                                    fileURL: fileURL,
+                                                    resumeData: resumeData,
+                                                    serializationDuration: serializationDuration,
+                                                    result: result.tryMapError(transform))
+        }
     }
 }
 
