@@ -112,7 +112,6 @@ public class Request {
         var tasks: [URLSessionTask] = []
         /// All `URLSessionTaskMetrics` values gathered by Alamofire on behalf of the `Request`. Should correspond
         /// exactly the the `tasks` created.
-        /// private var _selectionFeedbackGenerator: Any? = nil
         private var _metrics: [Any] = []
         @available(iOS 10.0, *)
         fileprivate var metrics: [URLSessionTaskMetrics] {
